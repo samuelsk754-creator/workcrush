@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Work Crush</title>
+
+<style>
+*{box-sizing:border-box;font-family:Segoe UI,Arial}
+
+body{
+  margin:0;
+  height:100vh;
+  background: url("fundo.png") no-repeat center center fixed;
+  background-size: cover;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+/* EFEITO VIDRO */
+#game{
+  backdrop-filter: blur(8px);
+}
+
+/* MENU */
+#menu{
+  text-align:center;
+  color:white;
+  text-shadow:0 8px 25px rgba(0,0,0,.6);
+}
+
+#menu h1{
+  font-size:64px;
+  margin:0;
+}
+
+#menu button{
+  margin-top:25px;
+  padding:16px 50px;
+  font-size:24px;
+  border:none;
+  border-radius:16px;
+  cursor:pointer;
+  background:white;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+
+/* GAME AREA */
+#game{
+  display:none;
+  text-align:center;
+}
+
+.topbar{
+  background:rgba(255,255,255,.95);
+  padding:14px 22px;
+  border-radius:20px;
+  margin-bottom:18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+  font-weight:bold;
+  font-size:20px;
+}
+
+#board{
+  width:520px;
+  height:520px;
+  background:rgba(255,255,255,.95);
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  grid-template-rows:repeat(8,1fr);
+  gap:8px;
+  padding:12px;
+  border-radius:22px;
+  box-shadow:0 18px 40px rgba(0,0,0,.45);
+}
+
+/* PEÇAS */
+.tile{
+  background:white;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:36px;
+  cursor:pointer;
+  transition:transform .15s, box-shadow .15s;
+  box-shadow:0 6px 14px rgba(0,0,0,.35);
+}
+
+.tile:hover{
+  transform:scale(1.1);
+}
+
+.selected{
+  outline:5px solid gold;
+  box-shadow:0 0 25px gold;
+  transform:scale(1.15);
+}
+
+.pop{
+  animation:pop .25s forwards;
+}
+
+@keyframes pop{
+  0%{transform:scale(1);opacity:1}
+  100%{transform:scale(.4);opacity:0}
+}
+
+.fall{
+  animation:fall .25s ease;
+}
+
+@keyframes fall{
+  from{transform:translateY(-25px);opacity:.3}
+  to{transform:translateY(0);opacity:1}
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <h1>💼 Work Crush</h1>
+  <button onclick="startGame()">Jogar</button>
+</div>
+
+<div id="game">
+  <div class="topbar">
+    <div id="level">Fase 1</div>
+    <div id="score">Pontos: 0 / 100</div>
+  </div>
+  <div id="board"></div>
+</div>
+
+<script>
+const width = 8;
+const icons = ['📧','☕','⏰','📁','💻','📒'];
+
+let board = document.getElementById('board');
+let squares=[];
+let first=null;
+let score=0;
+let level=1;
+let goal=100;
+
+function startGame(){
+  document.getElementById('menu').style.display='none';
+  document.getElementById('game').style.display='block';
+  createBoard();
+}
+
+function createBoard(){
+  board.innerHTML='';
+  squares=[];
+  for(let i=0;i<64;i++){
+    const tile=document.createElement('div');
+    tile.className='tile';
+    tile.id=i;
+    tile.innerHTML=randomIcon();
+    tile.onclick=selectTile;
+    board.appendChild(tile);
+    squares.push(tile);
+  }
+}
+
+function randomIcon(){
+  return icons[Math.floor(Math.random()*icons.length)];
+}
+
+function selectTile(){
+  if(!first){
+    first=this;
+    this.classList.add('selected');
+  }else{
+    swap(first,this);
+    first.classList.remove('selected');
+    first=null;
+    setTimeout(checkMatches,120);
+  }
+}
+
+function swap(a,b){
+  let t=a.innerHTML;
+  a.innerHTML=b.innerHTML;
+  b.innerHTML=t;
+}
+
+function checkMatches(){
+  let matched=false;
+
+  for(let i=0;i<62;i++){
+    let row=[i,i+1,i+2];
+    let icon=squares[i].innerHTML;
+    if(icon && row.every(x=>squares[x].innerHTML===icon)){
+      row.forEach(clearTile);
+      score+=10; matched=true;
+    }
+  }
+
+  for(let i=0;i<48;i++){
+    let col=[i,i+8,i+16];
+    let icon=squares[i].innerHTML;
+    if(icon && col.every(x=>squares[x].innerHTML===icon)){
+      col.forEach(clearTile);
+      score+=10; matched=true;
+    }
+  }
+
+  updateUI();
+  if(matched) setTimeout(moveDown,220);
+}
+
+function clearTile(i){
+  squares[i].classList.add('pop');
+  setTimeout(()=>squares[i].innerHTML='',200);
+}
+
+function moveDown(){
+  for(let i=55;i>=0;i--){
+    if(squares[i+8].innerHTML===''){
+      squares[i+8].innerHTML=squares[i].innerHTML;
+      squares[i].innerHTML=randomIcon();
+      squares[i+8].classList.add('fall');
+      setTimeout(()=>squares[i+8].classList.remove('fall'),200);
+    }
+  }
+  setTimeout(checkMatches,150);
+}
+
+function updateUI(){
+  document.getElementById('score').innerHTML=`Pontos: ${score} / ${goal}`;
+  if(score>=goal){
+    level++;
+    goal+=100;
+    score=0;
+    document.getElementById('level').innerHTML=`Fase ${level}`;
+    setTimeout(createBoard,600);
+  }
+}
+</script>
+
+</body>
+</html>
