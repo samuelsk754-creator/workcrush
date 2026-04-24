@@ -24,12 +24,24 @@ function createBoard() {
 
 function draw() {
   boardEl.innerHTML = "";
+
+  // FORÇA O GRID AQUI (corrige o bug)
+  boardEl.style.display = "grid";
+  boardEl.style.gridTemplateColumns = "repeat(8, 1fr)";
+  boardEl.style.gridTemplateRows = "repeat(8, 1fr)";
+  boardEl.style.gap = "8px";
+
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       const cell = document.createElement("div");
       cell.className = "cell t" + board[r][c];
       cell.dataset.r = r;
       cell.dataset.c = c;
+
+      // garante que a célula ocupe a posição correta do grid
+      cell.style.width = "100%";
+      cell.style.height = "100%";
+
       cell.onclick = () => select(r, c);
       boardEl.appendChild(cell);
     }
@@ -49,10 +61,9 @@ function select(r, c) {
 
   if ((dr + dc) === 1) {
     swap(selected, { r, c });
-    selected = null;
-  } else {
-    selected = null;
   }
+
+  selected = null;
 }
 
 function swap(a, b) {
@@ -63,9 +74,12 @@ function swap(a, b) {
   draw();
 
   if (checkMatches().length === 0) {
-    // volta se não formou combinação
     setTimeout(() => {
-      swap(a, b);
+      // desfaz se não formou combinação
+      let t = board[a.r][a.c];
+      board[a.r][a.c] = board[b.r][b.c];
+      board[b.r][b.c] = t;
+      draw();
     }, 200);
   } else {
     processMatches();
@@ -127,16 +141,13 @@ function processMatches() {
     return;
   }
 
-  // remove
   matches.forEach(([r, c]) => {
     board[r][c] = null;
   });
 
   draw();
 
-  setTimeout(() => {
-    dropPieces();
-  }, 250);
+  setTimeout(dropPieces, 250);
 }
 
 function dropPieces() {
@@ -159,7 +170,6 @@ function dropPieces() {
 
   draw();
 
-  // verifica combos em cadeia
   setTimeout(() => {
     if (checkMatches().length > 0) {
       processMatches();
